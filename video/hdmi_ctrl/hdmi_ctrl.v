@@ -64,6 +64,7 @@ module hdmi_ctrl (
                 8'h14: v_sync  <= pwdata;
                 8'h18: v_start <= pwdata;
                 8'h1C: v_active<= pwdata;
+                default: ;
             endcase
         end
     end

@@ -58,6 +58,12 @@ module titan_x_top (
     wire [31:0] plic_irq;
     wire [4:0]  timer_irq;
     wire [4:0]  sw_irq;
+
+    assign sw_irq = 5'h0;
+    assign plic_irq[4:0] = 5'h0;
+    assign plic_irq[9:5] = 5'h0;
+    assign plic_irq[19:12] = 8'h0;
+    assign plic_irq[31:29] = 3'h0;
     
     // AXI Crossbar Definitions
     localparam NM = 15;
@@ -221,7 +227,9 @@ module titan_x_top (
                 .dmem_rvalid(axm_rvalid[c+4]), .dmem_rready(axm_rready[c+4]), .dmem_rdata(axm_rdata[(c+4)*64 +: 64]), 
                 .dmem_rresp(axm_rresp[(c+4)*2 +: 2]), .dmem_rlast(axm_rlast[c+4]),
                 .snoop_valid(1'b0), .snoop_addr(40'h0), .snoop_type(2'b00),
-                .halt_req(1'b0), .resume_req(1'b0)
+                .snoop_ack(), .snoop_data_valid(), .snoop_data(),
+                .halt_req(1'b0), .resume_req(1'b0),
+                .hart_halted(), .hart_running()
             );
             assign axm_arid[c*4 +: 4] = c[3:0];
             assign axm_awid[(c+4)*4 +: 4] = c[3:0] + 4'd4;
@@ -243,6 +251,10 @@ module titan_x_top (
     assign axm_arid[8*4 +: 4] = 4'h8;
     assign axm_awid[9*4 +: 4] = 4'h9;
     assign axm_arid[9*4 +: 4] = 4'h9;
+    assign axm_wlast[9] = 1'b1;
+    assign axm_wstrb[9*8 +: 8] = 8'hFF;
+    assign axm_rready[8] = 1'b1;
+    assign axm_rready[9] = 1'b1;
 
     rv_monitor_core #(.HART_ID(4)) u_monitor (
         .clk(clk), .rst_n(core_rst_n),
@@ -313,6 +325,7 @@ module titan_x_top (
         .haddr(haddr), .hwrite(hwrite), .htrans(htrans), .hsize(hsize), .hburst(hburst),
         .hwdata(hwdata), .hrdata({32'h0, hrdata}), .hready(hready), .hresp(hresp)
     );
+    assign axs_rid[1*4 +: 4] = 4'h0;
     
     wire [31:0] paddr, pwdata;
     wire [63:0] prdata_mux;
@@ -410,6 +423,9 @@ module titan_x_top (
     // -------------------------------------------------------
     wire trng_seed_valid;
     wire [127:0] trng_seed;
+
+    assign trng_seed_valid = 1'b0;
+    assign trng_seed = 128'h0;
 
     wire [31:0] envm_addr;
     wire        envm_req;

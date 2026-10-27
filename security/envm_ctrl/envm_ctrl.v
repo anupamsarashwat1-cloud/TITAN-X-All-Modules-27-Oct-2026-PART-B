@@ -67,6 +67,7 @@ module envm_ctrl #(
                 8'h04: addr_reg <= pwdata;
                 8'h08: data_reg <= pwdata;
                 8'h10: unlock_reg <= pwdata;
+                default: ;
             endcase
         end
     end
@@ -116,6 +117,7 @@ module envm_ctrl #(
                         state <= IDLE;
                     end
                 end
+                default: state <= IDLE;
             endcase
         end
     end

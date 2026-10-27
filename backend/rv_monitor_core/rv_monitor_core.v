@@ -139,9 +139,14 @@ module rv_monitor_core #(
     wire        ex_memr, ex_memw, ex_regw, ex_is_amo, ex_valid, ex_lr_valid;
     wire        mul_div_stall;
 
+    wire mem_stall = (dmem_awvalid && (!dmem_awready || !dmem_wready)) ||
+                     (dmem_arvalid && !dmem_arready);
+    wire stall_ex = mem_stall || halt_req;
+    assign stall = mul_div_stall || stall_ex;
+
     rv_execute u_execute (
         .clk          (clk),        .rst_n        (rst_n),
-        .stall        (stall),      .flush        (flush_de),
+        .stall        (stall_ex),   .flush        (flush_de),
         .pc_in        (de_pc),      .rs1_data     (de_rs1),    .rs2_data    (de_rs2),
         .imm          (de_imm),     .rd_in        (de_rd),
         .rs1_addr     (de_rs1a),    .rs2_addr     (de_rs2a),
@@ -188,11 +193,7 @@ module rv_monitor_core #(
     assign dmem_arburst = 2'b01;
 
     assign dmem_rready  = 1'b1;
-    
-    wire mem_stall = (dmem_awvalid && (!dmem_awready || !dmem_wready)) ||
-                     (dmem_arvalid && !dmem_arready);
 
-    assign stall = mul_div_stall || mem_stall || halt_req;
     assign hart_halted = halt_req;
     assign hart_running = !halt_req;
 

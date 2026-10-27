@@ -79,6 +79,7 @@ module uart_16550 (
                 6'h1C: scr <= pwdata[7:0];
                 6'h20: mode_cr <= pwdata[7:0]; // Extension offset
                 6'h24: nbit_cr <= pwdata[7:0]; // Extension offset
+                default: ;
             endcase
         end
     end

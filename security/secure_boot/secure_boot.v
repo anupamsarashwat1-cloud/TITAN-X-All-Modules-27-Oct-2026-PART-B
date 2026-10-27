@@ -79,6 +79,7 @@ module secure_boot (
             end
             SUCCESS: next_state = SUCCESS;
             HALT: next_state = HALT;
+            default: next_state = IDLE;
         endcase
     end
     

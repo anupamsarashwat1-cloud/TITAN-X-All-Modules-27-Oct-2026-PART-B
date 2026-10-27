@@ -79,6 +79,7 @@ module usb_otg #(
                 8'h58: asynclistaddr <= pwdata;
                 8'h84: portsc1 <= pwdata;
                 8'hA4: otgsc <= pwdata;
+                default: ;
             endcase
         end
     end

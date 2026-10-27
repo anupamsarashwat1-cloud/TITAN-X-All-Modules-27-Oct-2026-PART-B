@@ -51,6 +51,10 @@ module aes_engine (
             ctrl_reg <= 32'h0;
             stat_reg <= 32'h0;
             aad_len  <= 32'h0;
+            tag_reg[0] <= 32'h0;
+            tag_reg[1] <= 32'h0;
+            tag_reg[2] <= 32'h0;
+            tag_reg[3] <= 32'h0;
         end else if (psel && penable && pwrite) begin
             case (paddr[7:0])
                 8'h00: ctrl_reg <= pwdata;
@@ -67,6 +71,11 @@ module aes_engine (
                 8'h38: iv_reg[2] <= pwdata;
                 8'h3C: iv_reg[3] <= pwdata;
                 8'h40: aad_len <= pwdata;
+                8'h50: tag_reg[0] <= pwdata;
+                8'h54: tag_reg[1] <= pwdata;
+                8'h58: tag_reg[2] <= pwdata;
+                8'h5C: tag_reg[3] <= pwdata;
+                default: ;
             endcase
         end
     end

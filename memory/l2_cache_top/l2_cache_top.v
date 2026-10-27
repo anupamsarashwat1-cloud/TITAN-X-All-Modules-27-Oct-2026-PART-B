@@ -57,7 +57,16 @@ module l2_cache_top (
     wire [63:0] dat_din;
     wire [63:0] dat_dout [0:3];
     wire [18:0] dat_addr [0:3]; // 512KB SRAM requires 19-bit address (for 8-bit word). 
-                                // Actually we write 64 bits at once, so we need to map it properly.
+
+    assign dat_cs = 4'h0;
+    assign dat_we = 4'h0;
+    assign dat_din = 64'h0;
+    genvar b_addr;
+    generate
+        for (b_addr = 0; b_addr < 4; b_addr = b_addr + 1) begin : gen_addr_zero
+            assign dat_addr[b_addr] = 19'h0;
+        end
+    endgenerate
     
     // We instantiate 4x 512KB SRAM models.
     // The SRAM model is sram_512kx8_180nm.

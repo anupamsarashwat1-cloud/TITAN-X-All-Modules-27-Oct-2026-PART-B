@@ -163,37 +163,49 @@ module axi4_crossbar #(
     reg [4:0] aw_sel [0:NS-1];
     reg [4:0] w_sel  [0:NS-1];
     reg [4:0] ar_sel [0:NS-1];
-    integer s, k, mm;
+    integer s_aw, k_aw, mm_aw;
+    integer s_ar, k_ar, mm_ar;
+    integer s_w,  k_w,  mm_w;
+    integer s;
 
+    // AW channel arbitration
     always @* begin
-        for (s = 0; s < NS; s = s + 1) begin
-            // AW: rotate through masters; skip full queues and masters whose
-            // outstanding writes target a different slave (ordering contract)
-            aw_sel[s] = 5'd31;
-            for (k = 0; k < NM; k = k + 1) begin
-                mm = rr_aw[s] + k; if (mm >= NM) mm = mm - NM;
-                if ((aw_sel[s] == 5'd31) && m_awvalid[mm] &&
-                    (aw_tgt[mm] == s[3:0]) && (wr_cnt[mm] != 2'd3) &&
-                    ((wr_cnt[mm] == 2'd0) ||
-                     (wr_q[mm][wr_rp[mm]] == aw_tgt[mm])))
-                    aw_sel[s] = mm[4:0];
+        for (s_aw = 0; s_aw < NS; s_aw = s_aw + 1) begin
+            aw_sel[s_aw] = 5'd31;
+            for (k_aw = 0; k_aw < NM; k_aw = k_aw + 1) begin
+                mm_aw = rr_aw[s_aw] + k_aw; if (mm_aw >= NM) mm_aw = mm_aw - NM;
+                if ((aw_sel[s_aw] == 5'd31) && m_awvalid[mm_aw] &&
+                    (aw_tgt[mm_aw] == s_aw[3:0]) && (wr_cnt[mm_aw] != 2'd3) &&
+                    ((wr_cnt[mm_aw] == 2'd0) ||
+                     (wr_q[mm_aw][wr_rp[mm_aw]] == aw_tgt[mm_aw])))
+                    aw_sel[s_aw] = mm_aw[4:0];
             end
-            // AR: same single-target rule against outstanding reads
-            ar_sel[s] = 5'd31;
-            for (k = 0; k < NM; k = k + 1) begin
-                mm = rr_ar[s] + k; if (mm >= NM) mm = mm - NM;
-                if ((ar_sel[s] == 5'd31) && m_arvalid[mm] &&
-                    (ar_tgt[mm] == s[3:0]) &&
-                    ((rd_cnt[mm] == 2'd0) || (rd_tgt[mm] == ar_tgt[mm])))
-                    ar_sel[s] = mm[4:0];
+        end
+    end
+
+    // AR channel arbitration
+    always @* begin
+        for (s_ar = 0; s_ar < NS; s_ar = s_ar + 1) begin
+            ar_sel[s_ar] = 5'd31;
+            for (k_ar = 0; k_ar < NM; k_ar = k_ar + 1) begin
+                mm_ar = rr_ar[s_ar] + k_ar; if (mm_ar >= NM) mm_ar = mm_ar - NM;
+                if ((ar_sel[s_ar] == 5'd31) && m_arvalid[mm_ar] &&
+                    (ar_tgt[mm_ar] == s_ar[3:0]) &&
+                    ((rd_cnt[mm_ar] == 2'd0) || (rd_tgt[mm_ar] == ar_tgt[mm_ar])))
+                    ar_sel[s_ar] = mm_ar[4:0];
             end
-            // W: master whose oldest write targets this slave
-            w_sel[s] = 5'd31;
-            for (k = 0; k < NM; k = k + 1) begin
-                mm = rr_w[s] + k; if (mm >= NM) mm = mm - NM;
-                if ((w_sel[s] == 5'd31) && (wr_cnt[mm] != 0) &&
-                    (wr_q[mm][wr_rp[mm]] == s[3:0]))
-                    w_sel[s] = mm[4:0];
+        end
+    end
+
+    // W channel arbitration
+    always @* begin
+        for (s_w = 0; s_w < NS; s_w = s_w + 1) begin
+            w_sel[s_w] = 5'd31;
+            for (k_w = 0; k_w < NM; k_w = k_w + 1) begin
+                mm_w = rr_w[s_w] + k_w; if (mm_w >= NM) mm_w = mm_w - NM;
+                if ((w_sel[s_w] == 5'd31) && (wr_cnt[mm_w] != 0) &&
+                    (wr_q[mm_w][wr_rp[mm_w]] == s_w[3:0]))
+                    w_sel[s_w] = mm_w[4:0];
             end
         end
     end
@@ -375,6 +387,7 @@ module axi4_crossbar #(
     reg [3:0] r_src [0:NM-1];
     integer si, sj, own_m;
     always @* begin
+        own_m = 0;
         for (si = 0; si < NM; si = si + 1) begin
             b_src[si] = 4'hF;
             r_src[si] = 4'hF;

@@ -91,8 +91,12 @@ module mipi_csi2_rx #(
     assign m_axis_tlast  = axis_tlast_reg;
     assign m_axis_tuser  = axis_tuser_reg;
     
-    always @(posedge rxbyteclkhs) begin
-        status_reg[0] <= |rxactivehs; // Link active status
+    always @(posedge rxbyteclkhs or negedge rst_n) begin
+        if (!rst_n) begin
+            status_reg <= 32'h0;
+        end else begin
+            status_reg <= {31'h0, |rxactivehs}; // Link active status
+        end
     end
 
 endmodule

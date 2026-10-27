@@ -76,6 +76,7 @@ module can_controller (
                 8'h24: tx_dlc <= pwdata;
                 8'h28: tx_data[0] <= pwdata;
                 8'h2C: tx_data[1] <= pwdata;
+                default: ;
             endcase
         end
     end

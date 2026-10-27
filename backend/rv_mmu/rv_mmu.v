@@ -117,6 +117,7 @@ module rv_mmu (
     wire ptw_busy;
     wire ptw_page_fault;
     wire [63:0] ptw_fault_addr;
+    wire [1:0]  ptw_fault_type;
 
     rv_ptw u_ptw (
         .clk           (clk),
@@ -138,6 +139,7 @@ module rv_mmu (
         .fill_level    (ptw_fill_level),
         .page_fault    (ptw_page_fault),
         .fault_addr    (ptw_fault_addr),
+        .fault_type    (ptw_fault_type),
         // AXI4
         .ptw_arvalid   (ptw_arvalid),
         .ptw_arready   (ptw_arready),

@@ -78,15 +78,18 @@ module gem_ethernet #(
             network_control <= 32'h0;
             network_config  <= 32'h0;
             irq_mask        <= 32'hFFFF_FFFF;
+            irq_status      <= 32'h0;
             tx_q_ptr        <= 32'h0;
             rx_q_ptr        <= 32'h0;
         end else if (apb_write) begin
             case (paddr[11:0])
                 12'h000: network_control <= pwdata;
                 12'h004: network_config  <= pwdata;
+                12'h020: irq_status      <= irq_status & ~pwdata;
                 12'h024: irq_mask        <= pwdata;
                 12'h014: tx_q_ptr        <= pwdata;
                 12'h018: rx_q_ptr        <= pwdata;
+                default: ;
             endcase
         end
     end

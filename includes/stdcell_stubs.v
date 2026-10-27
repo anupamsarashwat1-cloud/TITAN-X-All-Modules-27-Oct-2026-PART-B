@@ -1,6 +1,7 @@
 // Standard cell stub library for 180nm verification
 // Canonical home of cell stubs. Guarded so it may be listed on any compile
 // line regardless of ../common/* also being present.
+`timescale 1ns/1ps
 `ifndef TITANX_STDCELL_STUBS
 `define TITANX_STDCELL_STUBS
 
