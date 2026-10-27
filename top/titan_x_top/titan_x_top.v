@@ -64,6 +64,37 @@ module titan_x_top (
     assign plic_irq[9:5] = 5'h0;
     assign plic_irq[19:12] = 8'h0;
     assign plic_irq[31:29] = 3'h0;
+
+    // Platform-Level Interrupt Controller (PLIC)
+    wire [185:0] plic_sources;
+    wire [9:0]   plic_targets;
+
+    assign plic_sources[9:0]     = 10'h0;
+    assign plic_sources[10]      = plic_irq[10]; // DRBG
+    assign plic_sources[11]      = plic_irq[11]; // AES
+    assign plic_sources[19:12]   = 8'h0;
+    assign plic_sources[24:20]   = plic_irq[24:20]; // UART0-4
+    assign plic_sources[26:25]   = plic_irq[26:25]; // CAN0-1
+    assign plic_sources[27]      = plic_irq[27]; // GEM
+    assign plic_sources[28]      = plic_irq[28]; // USB
+    assign plic_sources[185:29]  = 157'h0;
+
+    plic #(
+        .NUM_SOURCES(186),
+        .NUM_TARGETS(10)
+    ) u_plic (
+        .clk(clk),
+        .rst_n(rst_n),
+        .interrupt_sources(plic_sources),
+        .psel(1'b0),
+        .penable(1'b0),
+        .pwrite(1'b0),
+        .paddr(24'h0),
+        .pwdata(32'h0),
+        .prdata(),
+        .pready(),
+        .irq_targets(plic_targets)
+    );
     
     // AXI Crossbar Definitions
     localparam NM = 15;
@@ -142,21 +173,45 @@ module titan_x_top (
         end
     endgenerate
 
-    // Tie off unused slaves
+    // Tie off unused slaves (Slaves 3-8 return DECERR without bus hang)
     genvar s;
     generate
         for (s = 3; s < 9; s = s + 1) begin : gen_unused_axis
-            assign axs_awready[s] = 1'b1;
-            assign axs_wready[s] = 1'b1;
-            assign axs_bvalid[s] = 1'b0;
-            assign axs_bresp[s*2 +: 2] = 2'b00;
-            assign axs_bid[s*4 +: 4] = 4'h0;
-            assign axs_arready[s] = 1'b1;
-            assign axs_rvalid[s] = 1'b0;
-            assign axs_rdata[s*64 +: 64] = 64'h0;
-            assign axs_rresp[s*2 +: 2] = 2'b00;
-            assign axs_rlast[s] = 1'b0;
-            assign axs_rid[s*4 +: 4] = 4'h0;
+            reg s_busy_wr, s_busy_rd;
+            reg [3:0] s_id_wr, s_id_rd;
+            always @(posedge clk or negedge rst_n) begin
+                if (!rst_n) begin
+                    s_busy_wr <= 1'b0;
+                    s_busy_rd <= 1'b0;
+                    s_id_wr   <= 4'h0;
+                    s_id_rd   <= 4'h0;
+                end else begin
+                    if (axs_awvalid[s] && axs_wvalid[s] && !s_busy_wr) begin
+                        s_busy_wr <= 1'b1;
+                        s_id_wr   <= axs_awid[s*4 +: 4];
+                    end else if (axs_bready[s] && s_busy_wr) begin
+                        s_busy_wr <= 1'b0;
+                    end
+
+                    if (axs_arvalid[s] && !s_busy_rd) begin
+                        s_busy_rd <= 1'b1;
+                        s_id_rd   <= axs_arid[s*4 +: 4];
+                    end else if (axs_rready[s] && s_busy_rd) begin
+                        s_busy_rd <= 1'b0;
+                    end
+                end
+            end
+            assign axs_awready[s] = !s_busy_wr;
+            assign axs_wready[s]  = !s_busy_wr;
+            assign axs_bvalid[s]  = s_busy_wr;
+            assign axs_bresp[s*2 +: 2] = 2'b11; // DECERR
+            assign axs_bid[s*4 +: 4]   = s_id_wr;
+            assign axs_arready[s] = !s_busy_rd;
+            assign axs_rvalid[s]  = s_busy_rd;
+            assign axs_rdata[s*64 +: 64] = 64'hDEAD_DEAD_DEAD_DEAD;
+            assign axs_rresp[s*2 +: 2] = 2'b11; // DECERR
+            assign axs_rlast[s]   = 1'b1;
+            assign axs_rid[s*4 +: 4]   = s_id_rd;
         end
     endgenerate
 
@@ -208,7 +263,7 @@ module titan_x_top (
                 .RESET_PC(64'h0000_0000_1000_0000)
             ) u_core (
                 .clk(clk), .rst_n(core_rst_n),
-                .irq_m_ext(plic_irq[c]), .irq_m_timer(timer_irq[c]), .irq_m_soft(sw_irq[c]),
+                .irq_m_ext(plic_targets[c*2]), .irq_m_timer(timer_irq[c]), .irq_m_soft(sw_irq[c]),
                 
                 .imem_arvalid(axm_arvalid[c]), .imem_arready(axm_arready[c]), 
                 .imem_araddr(axm_araddr[c*40 +: 40]), .imem_arlen(imem_arlen), 
@@ -251,14 +306,11 @@ module titan_x_top (
     assign axm_arid[8*4 +: 4] = 4'h8;
     assign axm_awid[9*4 +: 4] = 4'h9;
     assign axm_arid[9*4 +: 4] = 4'h9;
-    assign axm_wlast[9] = 1'b1;
-    assign axm_wstrb[9*8 +: 8] = 8'hFF;
     assign axm_rready[8] = 1'b1;
-    assign axm_rready[9] = 1'b1;
 
     rv_monitor_core #(.HART_ID(4)) u_monitor (
         .clk(clk), .rst_n(core_rst_n),
-        .irq_m_ext(plic_irq[4]), .irq_m_timer(timer_irq[4]), .irq_m_soft(sw_irq[4]),
+        .irq_m_ext(plic_targets[8]), .irq_m_timer(timer_irq[4]), .irq_m_soft(sw_irq[4]),
         
         .imem_arvalid(axm_arvalid[8]), .imem_arready(axm_arready[8]), .imem_araddr(axm_araddr[8*40 +: 40]),
         .imem_rvalid(axm_rvalid[8]), .imem_rdata(axm_rdata[8*64 +: 64]), .imem_rresp(axm_rresp[8*2 +: 2]),
@@ -266,11 +318,15 @@ module titan_x_top (
         .dmem_awvalid(axm_awvalid[9]), .dmem_awready(axm_awready[9]), .dmem_awaddr(axm_awaddr[9*40 +: 40]),
         .dmem_awlen(), .dmem_awsize(), .dmem_awburst(),
         .dmem_wvalid(axm_wvalid[9]), .dmem_wready(axm_wready[9]), .dmem_wdata(axm_wdata[9*64 +: 64]),
+        .dmem_wstrb(axm_wstrb[9*8 +: 8]), .dmem_wlast(axm_wlast[9]),
         .dmem_bvalid(axm_bvalid[9]), .dmem_bready(axm_bready[9]), .dmem_bresp(axm_bresp[9*2 +: 2]),
+        
+        .dmem_arvalid(axm_arvalid[9]), .dmem_arready(axm_arready[9]), .dmem_araddr(axm_araddr[9*40 +: 40]),
+        .dmem_arlen(), .dmem_arsize(), .dmem_arburst(),
+        .dmem_rvalid(axm_rvalid[9]), .dmem_rready(axm_rready[9]), .dmem_rdata(axm_rdata[9*64 +: 64]),
+        .dmem_rlast(), .dmem_rresp(axm_rresp[9*2 +: 2]),
         .halt_req(1'b0), .resume_req(1'b0)
     );
-    assign axm_arvalid[9] = 1'b0;
-    assign axm_araddr[9*40 +: 40] = 40'h0;
 
     // DDR4 static pin control
     assign ddr_reset_n = rst_n;
@@ -340,24 +396,24 @@ module titan_x_top (
     assign hready = 1'b1;
     assign hresp = 1'b0;
 
-    // APB Address Decoder
-    wire psel_uart0 = psel && (paddr[31:12] == 20'h10000);
-    wire psel_uart1 = psel && (paddr[31:12] == 20'h10001);
-    wire psel_uart2 = psel && (paddr[31:12] == 20'h10002);
-    wire psel_uart3 = psel && (paddr[31:12] == 20'h10003);
-    wire psel_uart4 = psel && (paddr[31:12] == 20'h10004);
-    wire psel_rtc   = psel && (paddr[31:12] == 20'h10010);
-    wire psel_gem   = psel && (paddr[31:12] == 20'h10020);
-    wire psel_usb   = psel && (paddr[31:12] == 20'h10030);
-    wire psel_mipi  = psel && (paddr[31:12] == 20'h10040);
-    wire psel_isp   = psel && (paddr[31:12] == 20'h10050);
-    wire psel_hdmi  = psel && (paddr[31:12] == 20'h10060);
-    wire psel_drbg  = psel && (paddr[31:12] == 20'h20000);
-    wire psel_aes   = psel && (paddr[31:12] == 20'h20010);
-    wire psel_envm  = psel && (paddr[31:12] == 20'h20020);
-    wire psel_boot  = psel && (paddr[31:12] == 20'h20030);
-    wire psel_can0  = psel && (paddr[31:12] == 20'h30000);
-    wire psel_can1  = psel && (paddr[31:12] == 20'h30001);
+    // APB Address Decoder (supports 0x4000_0000 APB bridge window and legacy apertures)
+    wire psel_uart0 = psel && (paddr[31:16] == 16'h4001 || paddr[31:12] == 20'h40000 || paddr[31:12] == 20'h10000);
+    wire psel_uart1 = psel && (paddr[31:12] == 20'h40001 || paddr[31:12] == 20'h10001);
+    wire psel_uart2 = psel && (paddr[31:12] == 20'h40002 || paddr[31:12] == 20'h10002);
+    wire psel_uart3 = psel && (paddr[31:12] == 20'h40003 || paddr[31:12] == 20'h10003);
+    wire psel_uart4 = psel && (paddr[31:12] == 20'h40004 || paddr[31:12] == 20'h10004);
+    wire psel_rtc   = psel && (paddr[31:12] == 20'h40010 || paddr[31:12] == 20'h10010 || paddr[31:16] == 16'h4002);
+    wire psel_gem   = psel && (paddr[31:12] == 20'h40020 || paddr[31:12] == 20'h10020);
+    wire psel_usb   = psel && (paddr[31:12] == 20'h40030 || paddr[31:12] == 20'h10030);
+    wire psel_mipi  = psel && (paddr[31:12] == 20'h40040 || paddr[31:12] == 20'h10040);
+    wire psel_isp   = psel && (paddr[31:12] == 20'h40050 || paddr[31:12] == 20'h10050);
+    wire psel_hdmi  = psel && (paddr[31:12] == 20'h40060 || paddr[31:12] == 20'h10060);
+    wire psel_drbg  = psel && (paddr[31:12] == 20'h40070 || paddr[31:12] == 20'h20000);
+    wire psel_aes   = psel && (paddr[31:12] == 20'h40080 || paddr[31:12] == 20'h20010);
+    wire psel_envm  = psel && (paddr[31:12] == 20'h40090 || paddr[31:12] == 20'h20020);
+    wire psel_boot  = psel && (paddr[31:12] == 20'h400A0 || paddr[31:12] == 20'h20030);
+    wire psel_can0  = psel && (paddr[31:12] == 20'h400B0 || paddr[31:12] == 20'h30000);
+    wire psel_can1  = psel && (paddr[31:12] == 20'h400C0 || paddr[31:12] == 20'h30001);
 
     wire [31:0] prdata_uart0, prdata_uart1, prdata_uart2, prdata_uart3, prdata_uart4;
     wire [31:0] prdata_rtc, prdata_gem, prdata_usb, prdata_mipi, prdata_isp, prdata_hdmi;

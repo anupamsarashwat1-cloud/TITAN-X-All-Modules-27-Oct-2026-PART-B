@@ -37,19 +37,24 @@ module rtc (
     // Cross-clock domain syncing for mtime would normally be required.
     // Assuming synchronous APB accesses to mtime domain for simplicity here.
 
-    // BUG-RTC-001 fix: 2-FF CDC synchronizer for mtime (rtc_clk → clk)
-    reg [63:0] mtime_meta, mtime_sync;
+    // Robust 1-bit pulse synchronizer CDC (rtc_clk -> clk)
+    // Eliminates multi-bit skew, bus metastability, and non-monotonic jumps
+    reg rtc_tick_toggle;
     always @(posedge rtc_clk or negedge rst_n) begin
-        if (!rst_n) mtime <= 64'h0;
-        else        mtime <= mtime + 64'h1;
+        if (!rst_n) rtc_tick_toggle <= 1'b0;
+        else        rtc_tick_toggle <= ~rtc_tick_toggle;
     end
+
+    (* ASYNC_REG = "TRUE" *) reg [2:0] rtc_sync_q;
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            mtime_meta <= 64'h0;
-            mtime_sync <= 64'h0;
+            rtc_sync_q <= 3'b0;
+            mtime      <= 64'h0;
         end else begin
-            mtime_meta <= mtime;
-            mtime_sync <= mtime_meta;
+            rtc_sync_q <= {rtc_sync_q[1:0], rtc_tick_toggle};
+            if (rtc_sync_q[2] ^ rtc_sync_q[1]) begin
+                mtime <= mtime + 64'h1;
+            end
         end
     end
 
@@ -81,8 +86,8 @@ module rtc (
     reg [31:0] prdata_reg;
     always @(*) begin
         case (paddr[15:0])
-            16'hbff8: prdata_reg = mtime_sync[31:0];  // BUG-RTC-001: use CDC-synced value
-            16'hbffc: prdata_reg = mtime_sync[63:32];
+            16'hbff8: prdata_reg = mtime[31:0];
+            16'hbffc: prdata_reg = mtime[63:32];
             16'h4000: prdata_reg = mtimecmp[0][31:0];
             16'h4004: prdata_reg = mtimecmp[0][63:32];
             16'h4008: prdata_reg = mtimecmp[1][31:0];
@@ -99,10 +104,10 @@ module rtc (
     assign prdata = prdata_reg;
 
     // Generate interrupts when mtime >= mtimecmp
-    assign timer_irq[0] = (mtime_sync >= mtimecmp[0]);
-    assign timer_irq[1] = (mtime_sync >= mtimecmp[1]);
-    assign timer_irq[2] = (mtime_sync >= mtimecmp[2]);
-    assign timer_irq[3] = (mtime_sync >= mtimecmp[3]);
-    assign timer_irq[4] = (mtime_sync >= mtimecmp[4]);
+    assign timer_irq[0] = (mtime >= mtimecmp[0]);
+    assign timer_irq[1] = (mtime >= mtimecmp[1]);
+    assign timer_irq[2] = (mtime >= mtimecmp[2]);
+    assign timer_irq[3] = (mtime >= mtimecmp[3]);
+    assign timer_irq[4] = (mtime >= mtimecmp[4]);
 
 endmodule

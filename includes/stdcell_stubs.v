@@ -23,7 +23,7 @@ module ICGX4 (
     reg en_latched;
     always @(CLK or EN or TE) begin
         if (!CLK)
-            en_latched <= EN | TE;
+            en_latched = EN | TE;
     end
     assign GCLK = CLK & en_latched;
 endmodule
