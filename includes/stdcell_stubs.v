@@ -13,4 +13,19 @@ module BUFX4 (
     assign Y = A;
 endmodule
 
+// ICGX4: Integrated Clock Gating Cell (Latch-based glitch-free clock gate)
+module ICGX4 (
+    input  wire CLK,
+    input  wire EN,
+    input  wire TE, // Test Enable / Scan Bypass
+    output wire GCLK
+);
+    reg en_latched;
+    always @(CLK or EN or TE) begin
+        if (!CLK)
+            en_latched <= EN | TE;
+    end
+    assign GCLK = CLK & en_latched;
+endmodule
+
 `endif // TITANX_STDCELL_STUBS
