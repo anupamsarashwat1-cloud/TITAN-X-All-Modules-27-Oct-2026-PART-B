@@ -1,0 +1,9 @@
+sim_main_coverage.o: \
+ /home/anupam-sarashwat/TITAN-X-All-Modules-27-Oct-2026-PART-B/verification/coverage/sim_main_coverage.cpp \
+ /usr/share/verilator/include/verilated.h \
+ /usr/share/verilator/include/verilatedos.h \
+ /usr/share/verilator/include/verilated_config.h \
+ /usr/share/verilator/include/verilated_types.h \
+ /usr/share/verilator/include/verilated_funcs.h \
+ /usr/share/verilator/include/verilated_cov.h \
+ /usr/share/verilator/include/verilated.h Vrv_core_top.h

@@ -56,7 +56,8 @@ module axi_rom #(
                 s_arready <= 1'b0;
                 s_rvalid  <= 1'b1;
                 s_rlast   <= 1'b1;
-                s_rdata   <= rom[s_araddr[AW-1:3] & (DEPTH-1)];
+                s_rdata   <= s_araddr[2] ? {rom[s_araddr[AW-1:3] & (DEPTH-1)][63:32], rom[s_araddr[AW-1:3] & (DEPTH-1)][63:32]} :
+                                           rom[s_araddr[AW-1:3] & (DEPTH-1)];
                 s_rid     <= s_arid;
             end else if (s_rvalid && s_rready) begin
                 s_rvalid  <= 1'b0;

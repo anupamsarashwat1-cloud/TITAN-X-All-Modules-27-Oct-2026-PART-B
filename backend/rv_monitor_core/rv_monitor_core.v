@@ -113,11 +113,15 @@ module rv_monitor_core #(
     wire [1:0]  de_csr_op;
     wire        de_is_ecall, de_is_ebreak, de_is_mret;
     
+    wire        mon_wb_we   = ex_valid && ex_regw && (ex_rd != 5'h0);
+    wire [4:0]  mon_wb_rd   = ex_rd;
+    wire [63:0] mon_wb_data = ex_alures;
+
     rv_decode u_decode (
         .clk       (clk),         .rst_n    (rst_n),
         .stall     (stall),       .flush    (flush_de),
         .pc_in     (fe_pc),       .instr_in (fe_instr),    .valid_in (fe_valid),
-        .wb_rd     (5'h0),        .wb_data  (64'h0),       .wb_we    (1'b0), // Wire to WB
+        .wb_rd     (mon_wb_rd),   .wb_data  (mon_wb_data), .wb_we    (mon_wb_we),
         .pc_out    (de_pc),       .rs1_data (de_rs1),      .rs2_data (de_rs2),
         .imm       (de_imm),      .rd       (de_rd),
         .rs1_addr  (de_rs1a),     .rs2_addr (de_rs2a),
@@ -144,7 +148,9 @@ module rv_monitor_core #(
     wire stall_ex = mem_stall || halt_req;
     assign stall = mul_div_stall || stall_ex;
 
-    rv_execute u_execute (
+    rv_execute #(
+        .HART_ID(HART_ID)
+    ) u_execute (
         .clk          (clk),        .rst_n        (rst_n),
         .stall        (stall_ex),   .flush        (flush_de),
         .pc_in        (de_pc),      .rs1_data     (de_rs1),    .rs2_data    (de_rs2),
@@ -159,7 +165,7 @@ module rv_monitor_core #(
         .irq_m_ext    (irq_m_ext),  .irq_m_timer  (irq_m_timer), .irq_m_soft (irq_m_soft),
         .valid_in     (de_valid),
         .fwd_mem_data (64'h0),      .fwd_mem_valid(1'b0),      .fwd_mem_rd  (5'h0),
-        .fwd_wb_data  (64'h0),      .fwd_wb_valid (1'b0),      .fwd_wb_rd   (5'h0),
+        .fwd_wb_data  (mon_wb_data),.fwd_wb_valid (mon_wb_we), .fwd_wb_rd   (mon_wb_rd),
         .fpu_result   (64'h0),      .fpu_valid    (1'b0),      .fpu_done    (1'b1), // No FPU
         .alu_result   (ex_alures),  .rs2_out      (ex_rs2),
         .rd_out       (ex_rd),      .funct3_out   (ex_f3),     .opcode_out  (ex_op),

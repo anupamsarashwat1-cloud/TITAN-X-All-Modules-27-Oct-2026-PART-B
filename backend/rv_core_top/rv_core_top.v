@@ -196,7 +196,9 @@ module rv_core_top #(
     wire [4:0]  fwd_mem_rd, fwd_wb_rd;
     wire        fwd_mem_valid, fwd_wb_valid;
 
-    rv_execute u_execute (
+    rv_execute #(
+        .HART_ID(HART_ID)
+    ) u_execute (
         .clk          (clk),        .rst_n        (rst_n),
         .stall        (stall_ex),   .flush        (flush_de_4),
         .pc_in        (de_pc),      .rs1_data     (de_rs1),    .rs2_data    (de_rs2),

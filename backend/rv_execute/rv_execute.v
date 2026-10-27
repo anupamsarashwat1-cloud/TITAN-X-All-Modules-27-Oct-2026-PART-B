@@ -6,7 +6,9 @@
 `include "params.vh"
 `include "isa_pkg.vh"
 
-module rv_execute (
+module rv_execute #(
+    parameter HART_ID = 0
+) (
     input  wire        clk,
     input  wire        rst_n,
     input  wire        stall,
@@ -423,7 +425,9 @@ module rv_execute (
 
     wire [63:0] csr_old, mtvec_q, mepc_q;
     wire        irq_pend;
-    rv_csr u_csr (
+    rv_csr #(
+        .HART_ID(HART_ID)
+    ) u_csr (
         .clk          (clk),
         .rst_n        (rst_n),
         .csr_raddr    (csr_a),

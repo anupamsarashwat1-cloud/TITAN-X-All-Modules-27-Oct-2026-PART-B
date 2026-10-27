@@ -22,7 +22,9 @@
 `include "params.vh"
 `include "isa_pkg.vh"
 
-module rv_csr (
+module rv_csr #(
+    parameter HART_ID = 0
+) (
     input  wire        clk,
     input  wire        rst_n,
     // combinational read port (execute)
@@ -84,7 +86,7 @@ module rv_csr (
             12'h341:    csr_rdata = mepc_q;
             12'h342:    csr_rdata = mcause_q;
             12'h343:    csr_rdata = mtval_q;
-            12'hF14:    csr_rdata = 64'd0;               // mhartid (single hart view in core 0)
+            12'hF14:    csr_rdata = {52'h0, HART_ID[11:0]}; // mhartid
             12'hB00:    csr_rdata = mcycle_q;
             12'hB02:    csr_rdata = minstret_q;
             12'hC00:    csr_rdata = mcycle_q;            // cycle alias

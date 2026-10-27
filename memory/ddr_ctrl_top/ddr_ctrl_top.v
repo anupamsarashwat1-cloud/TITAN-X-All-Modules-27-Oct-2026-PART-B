@@ -36,7 +36,11 @@ module ddr_ctrl_top (
     // -------------------------------------------------------
     // Initialization & Refresh Manager
     // -------------------------------------------------------
+`ifdef FAST_INIT
+    localparam INIT_CYCLES = 16'd50;
+`else
     localparam INIT_CYCLES = 16'd40000;
+`endif
     localparam REFRESH_INTERVAL = 16'd1560; // 7.8us at 200MHz
 
     reg [15:0] init_cnt;
