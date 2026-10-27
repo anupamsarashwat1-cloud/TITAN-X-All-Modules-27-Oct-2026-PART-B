@@ -1,0 +1,26 @@
+set nfacs [gtkwave::getNumFacs]
+set facs [list]
+lappend facs "tb_fresh_rv_dcache.clk"
+lappend facs "tb_fresh_rv_dcache.rst_n"
+lappend facs "tb_fresh_rv_dcache.cpu_addr\[39:0\]"
+lappend facs "tb_fresh_rv_dcache.cpu_wdata\[63:0\]"
+lappend facs "tb_fresh_rv_dcache.cpu_wstrb\[7:0\]"
+lappend facs "tb_fresh_rv_dcache.cpu_req"
+lappend facs "tb_fresh_rv_dcache.cpu_wr"
+lappend facs "tb_fresh_rv_dcache.cpu_size\[2:0\]"
+lappend facs "tb_fresh_rv_dcache.cpu_rdata\[63:0\]"
+lappend facs "tb_fresh_rv_dcache.cpu_valid"
+lappend facs "tb_fresh_rv_dcache.cpu_stall"
+lappend facs "tb_fresh_rv_dcache.flush_all"
+lappend facs "tb_fresh_rv_dcache.flush_busy"
+lappend facs "tb_fresh_rv_dcache.m_arvalid"
+lappend facs "tb_fresh_rv_dcache.m_arready"
+lappend facs "tb_fresh_rv_dcache.m_awvalid"
+lappend facs "tb_fresh_rv_dcache.m_awready"
+lappend facs "tb_fresh_rv_dcache.m_wvalid"
+lappend facs "tb_fresh_rv_dcache.m_wready"
+lappend facs "tb_fresh_rv_dcache.m_wdata\[63:0\]"
+lappend facs "tb_fresh_rv_dcache.m_wlast"
+lappend facs "tb_fresh_rv_dcache.m_bvalid"
+gtkwave::addSignalsFromList $facs
+gtkwave::setZoomFactor -3

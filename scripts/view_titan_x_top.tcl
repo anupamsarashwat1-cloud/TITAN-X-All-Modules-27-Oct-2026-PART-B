@@ -1,0 +1,26 @@
+set nfacs [gtkwave::getNumFacs]
+set facs [list]
+lappend facs "tb_fresh_titan_x_top.clk"
+lappend facs "tb_fresh_titan_x_top.rst_n"
+lappend facs "tb_fresh_titan_x_top.dut.boot_pass"
+lappend facs "tb_fresh_titan_x_top.dut.core_rst_n"
+lappend facs "tb_fresh_titan_x_top.dut.u_secure_boot.state\[2:0\]"
+lappend facs "tb_fresh_titan_x_top.dut.axm_arvalid\[0\]"
+lappend facs "tb_fresh_titan_x_top.dut.axm_arvalid\[1\]"
+lappend facs "tb_fresh_titan_x_top.dut.axm_arvalid\[2\]"
+lappend facs "tb_fresh_titan_x_top.dut.axm_arvalid\[3\]"
+lappend facs "tb_fresh_titan_x_top.dut.axm_arvalid\[8\]"
+lappend facs "tb_fresh_titan_x_top.dut.u_boot_rom.s_arvalid"
+lappend facs "tb_fresh_titan_x_top.dut.u_boot_rom.s_arready"
+lappend facs "tb_fresh_titan_x_top.dut.u_boot_rom.s_rvalid"
+lappend facs "tb_fresh_titan_x_top.dut.u_boot_rom.s_rdata\[63:0\]"
+lappend facs "tb_fresh_titan_x_top.ddr_ck_p"
+lappend facs "tb_fresh_titan_x_top.ddr_cke"
+lappend facs "tb_fresh_titan_x_top.ddr_reset_n"
+lappend facs "tb_fresh_titan_x_top.ddr_cs_n"
+lappend facs "tb_fresh_titan_x_top.uart_tx\[4:0\]"
+lappend facs "tb_fresh_titan_x_top.can_tx\[1:0\]"
+lappend facs "tb_fresh_titan_x_top.hdmi_tmds_clk_p"
+lappend facs "tb_fresh_titan_x_top.hdmi_tmds_data_p\[2:0\]"
+gtkwave::addSignalsFromList $facs
+gtkwave::setZoomFactor -16

@@ -1,0 +1,26 @@
+set nfacs [gtkwave::getNumFacs]
+set facs [list]
+lappend facs "tb_fresh_rv_ptw.clk"
+lappend facs "tb_fresh_rv_ptw.rst_n"
+lappend facs "tb_fresh_rv_ptw.va_req\[38:0\]"
+lappend facs "tb_fresh_rv_ptw.asid_req\[15:0\]"
+lappend facs "tb_fresh_rv_ptw.satp_ppn\[43:0\]"
+lappend facs "tb_fresh_rv_ptw.ptw_req"
+lappend facs "tb_fresh_rv_ptw.access_r"
+lappend facs "tb_fresh_rv_ptw.access_w"
+lappend facs "tb_fresh_rv_ptw.access_x"
+lappend facs "tb_fresh_rv_ptw.ptw_busy"
+lappend facs "tb_fresh_rv_ptw.ptw_arvalid"
+lappend facs "tb_fresh_rv_ptw.ptw_arready"
+lappend facs "tb_fresh_rv_ptw.ptw_araddr\[39:0\]"
+lappend facs "tb_fresh_rv_ptw.ptw_rvalid"
+lappend facs "tb_fresh_rv_ptw.ptw_rdata\[63:0\]"
+lappend facs "tb_fresh_rv_ptw.fill_valid"
+lappend facs "tb_fresh_rv_ptw.fill_pa\[37:0\]"
+lappend facs "tb_fresh_rv_ptw.fill_perm\[7:0\]"
+lappend facs "tb_fresh_rv_ptw.fill_level\[1:0\]"
+lappend facs "tb_fresh_rv_ptw.page_fault"
+lappend facs "tb_fresh_rv_ptw.fault_addr\[63:0\]"
+lappend facs "tb_fresh_rv_ptw.fault_type\[1:0\]"
+gtkwave::addSignalsFromList $facs
+gtkwave::setZoomFactor -3

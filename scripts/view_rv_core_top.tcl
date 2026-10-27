@@ -1,0 +1,27 @@
+set nfacs [gtkwave::getNumFacs]
+set facs [list]
+lappend facs "tb_fresh_rv_core_top.clk"
+lappend facs "tb_fresh_rv_core_top.rst_n"
+lappend facs "tb_fresh_rv_core_top.dut.fe_pc\[63:0\]"
+lappend facs "tb_fresh_rv_core_top.dut.fe_instr\[31:0\]"
+lappend facs "tb_fresh_rv_core_top.imem_araddr\[39:0\]"
+lappend facs "tb_fresh_rv_core_top.imem_arvalid"
+lappend facs "tb_fresh_rv_core_top.imem_rvalid"
+lappend facs "tb_fresh_rv_core_top.dut.wb_we"
+lappend facs "tb_fresh_rv_core_top.dut.wb_rd\[4:0\]"
+lappend facs "tb_fresh_rv_core_top.dut.wb_data\[63:0\]"
+lappend facs "tb_fresh_rv_core_top.dmem_awvalid"
+lappend facs "tb_fresh_rv_core_top.dmem_awaddr\[39:0\]"
+lappend facs "tb_fresh_rv_core_top.dmem_wvalid"
+lappend facs "tb_fresh_rv_core_top.dmem_wdata\[63:0\]"
+lappend facs "tb_fresh_rv_core_top.dmem_arvalid"
+lappend facs "tb_fresh_rv_core_top.dmem_araddr\[39:0\]"
+lappend facs "tb_fresh_rv_core_top.dmem_rvalid"
+lappend facs "tb_fresh_rv_core_top.dut.stall"
+lappend facs "tb_fresh_rv_core_top.dut.branch_taken"
+lappend facs "tb_fresh_rv_core_top.dut.branch_target\[63:0\]"
+lappend facs "tb_fresh_rv_core_top.halt_req"
+lappend facs "tb_fresh_rv_core_top.hart_halted"
+lappend facs "tb_fresh_rv_core_top.hart_running"
+gtkwave::addSignalsFromList $facs
+gtkwave::setZoomFactor -16

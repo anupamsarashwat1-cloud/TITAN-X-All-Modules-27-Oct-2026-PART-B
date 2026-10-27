@@ -1,0 +1,466 @@
+#!/usr/bin/env python3
+import json
+import os
+
+prd_data = {
+    "project_metadata": {
+        "title": "SMVDU TITAN-X Microprocessor Verification & Self-Healing Loop PRD",
+        "standard": "RISC-V RV64GC (RV64IMAFDC)",
+        "isa_extensions": ["RV64I", "RV64M", "RV64A", "RV64F", "RV64D", "RV64C", "Zicsr", "Zifencei", "Sv39"],
+        "target_technology": "SCL 180nm Bulk CMOS",
+        "clock_domains": {
+            "core_clk": "100-200 MHz",
+            "ddr_phy_clk": "400 MHz",
+            "apb_clk": "25 MHz",
+            "tmds_pixel_clk": "74.25 MHz (720p) / 148.5 MHz (1080p)",
+            "ulpi_clk": "60 MHz"
+        },
+        "verification_objective": "100% fresh, self-checking testbench generation, zero reuse bias, GTKWave GUI automation, and CodeRabbit PR audit",
+        "generated_timestamp": "2026-10-27T10:45:00+05:30",
+        "crew_agents": [
+            "GSD-Orchestrator",
+            "Roo-Code-Browser",
+            "Ralph-Loop-Agent",
+            "CodeRabbit-Auditor"
+        ]
+    },
+    "architectural_waves": {
+        "Wave_1_Base_Modules": {
+            "description": "Foundational leaf execution, register, arithmetic, and virtual memory building blocks",
+            "modules": [
+                {
+                    "name": "rv_regfile",
+                    "file": "backend/rv_regfile/rv_regfile.v",
+                    "category": "Register File",
+                    "description": "32 x 64-bit General Purpose Register file with dual asynchronous read ports and synchronous write with internal write-first bypass. Register x0 hardwired to zero."
+                },
+                {
+                    "name": "rv_execute",
+                    "file": "backend/rv_execute/rv_execute.v",
+                    "category": "Execution & ALU",
+                    "description": "64-bit Integer ALU, 3-cycle Radix-4 Multiplier, 64-cycle Restoring Divider, Branch Comparator, Atomic Memory Operation (AMO) ALU, and 32-bit W-instruction narrowing."
+                },
+                {
+                    "name": "rv_csr",
+                    "file": "backend/rv_csr/rv_csr.v",
+                    "category": "Control & Status Registers",
+                    "description": "Privileged architecture CSR file implementing mstatus, mie, mtvec, mepc, mcause, mtval, mip, mcycle, minstret with atomic CSRRW/CSRRS/CSRRC operations and trap vectoring."
+                },
+                {
+                    "name": "rv_fpu",
+                    "file": "backend/rv_fpu/rv_fpu.v",
+                    "category": "Floating Point Unit",
+                    "description": "IEEE 754-2008 compliant Single and Double Precision Floating Point arithmetic unit supporting FADD, FSUB, FMUL, FDIV, FSQRT, FMADD, FMSUB, FCVT, and FCMP."
+                },
+                {
+                    "name": "rv_mem",
+                    "file": "backend/rv_mem/rv_mem.v",
+                    "category": "Memory Access Stage",
+                    "description": "Memory stage pipeline boundary computing byte enables, sign/zero extensions for sub-word accesses (LB, LH, LW, LD, LBU, LHU, LWU) and AMO sequencing."
+                },
+                {
+                    "name": "rv_writeback",
+                    "file": "backend/rv_writeback/rv_writeback.v",
+                    "category": "Writeback Stage",
+                    "description": "Writeback stage multiplexer selecting final retirement operand between memory read data, ALU/FPU results, and CSR reads, generating destination register write strobes."
+                },
+                {
+                    "name": "rv_bpu",
+                    "file": "frontend/rv_bpu/rv_bpu.v",
+                    "category": "Branch Predictor",
+                    "description": "Branch Prediction Unit featuring Gshare Branch History Table (BHT), Global History Register (GHR), and 16-entry Return Address Stack (RAS)."
+                },
+                {
+                    "name": "rv_tlb",
+                    "file": "backend/rv_tlb/rv_tlb.v",
+                    "category": "Virtual Memory",
+                    "description": "64-entry fully associative Translation Lookaside Buffer with ASID filtering, page size decoding (4KB, 2MB, 1GB), and SFENCE.VMA selective invalidation."
+                },
+                {
+                    "name": "rv_pmp",
+                    "file": "backend/rv_pmp/rv_pmp.v",
+                    "category": "Physical Memory Protection",
+                    "description": "16-region Physical Memory Protection unit enforcing TOR, NA4, and NAPOT boundary permissions across User, Supervisor, and Machine privilege modes."
+                }
+            ]
+        },
+        "Wave_2_Subsystems": {
+            "description": "Integrated pipeline stages, instruction/data caches, translation walkers, and system interrupt/debug controllers",
+            "modules": [
+                {
+                    "name": "rv_decode",
+                    "file": "frontend/rv_decode/rv_decode.v",
+                    "category": "Control Unit & Decoder",
+                    "description": "Instruction Decoder and Control Unit translating 32-bit RV64GC instructions into pipeline control vectors, immediate expansion, register addresses, and operand routing."
+                },
+                {
+                    "name": "rv_fetch",
+                    "file": "frontend/rv_fetch/rv_fetch.v",
+                    "category": "Instruction Fetch",
+                    "description": "Instruction Fetch Stage managing 64-bit Program Counter increment, branch redirect muxing, pipeline flush sequencing, and AXI4 instruction bus requests."
+                },
+                {
+                    "name": "rv_icache",
+                    "file": "frontend/rv_icache/rv_icache.v",
+                    "category": "L1 Instruction Cache",
+                    "description": "32KB 2-way set-associative VIPT Instruction Cache with SECDED single-bit ECC correction / multi-bit error detection and AXI-Lite 8-beat line refill engine."
+                },
+                {
+                    "name": "rv_dcache",
+                    "file": "backend/rv_dcache/rv_dcache.v",
+                    "category": "L1 Data Cache",
+                    "description": "32KB 4-way set-associative write-back L1 Data Cache with write-allocate, sub-word lane alignment, LR/SC reservation tracking, and dirty eviction engine."
+                },
+                {
+                    "name": "rv_ptw",
+                    "file": "backend/rv_ptw/rv_ptw.v",
+                    "category": "Page Table Walker",
+                    "description": "Hardware Page Table Walker performing autonomous 3-level Sv39 radix-tree page table traversals (Level 2 -> Level 1 -> Level 0) with A/D bit updates."
+                },
+                {
+                    "name": "rv_mmu",
+                    "file": "backend/rv_mmu/rv_mmu.v",
+                    "category": "Memory Management Subsystem",
+                    "description": "Integrated MMU coordinating TLB translation lookups, PTW refill requests, and PMP physical permission checks into a unified memory firewall."
+                },
+                {
+                    "name": "clint",
+                    "file": "backend/clint/clint.v",
+                    "category": "Core Local Interruptor",
+                    "description": "CLINT timer and inter-processor interrupt controller managing 64-bit monotonic mtime counter, per-hart mtimecmp comparators, and msip software interrupts."
+                },
+                {
+                    "name": "plic",
+                    "file": "backend/plic/plic.v",
+                    "category": "Platform-Level Interrupt Controller",
+                    "description": "Platform-Level Interrupt Controller arbitrating 186 external hardware interrupt sources with 7 priority levels, per-hart threshold gating, and atomic claim/complete handshakes."
+                },
+                {
+                    "name": "rv_debug",
+                    "file": "backend/rv_debug/rv_debug.v",
+                    "category": "Debug Subsystem",
+                    "description": "RISC-V Debug Module with JTAG DTM TAP controller, run-control registers (halt, resume, single-step), and abstract command execution."
+                },
+                {
+                    "name": "rv_monitor_core",
+                    "file": "backend/rv_monitor_core/rv_monitor_core.v",
+                    "category": "Security Monitor",
+                    "description": "Independent RV64IMAC Security Monitor Core tracking execution telemetry, anomaly detection, privilege transitions, and security watchdog triggers."
+                }
+            ]
+        },
+        "Wave_3_Top_Level_Processor": {
+            "description": "Single-Core full pipeline assembly and multi-core SoC system bring-up",
+            "modules": [
+                {
+                    "name": "rv_core_top",
+                    "file": "backend/rv_core_top/rv_core_top.v",
+                    "category": "Processor Core Top",
+                    "description": "Complete 5-Stage RV64GC in-order microprocessor core integrating Fetch, Decode, Execute, Memory, and Writeback stages with 3-stage operand forwarding, RAW hazard stalls, branch recovery, and AXI4 instruction/data master buses."
+                },
+                {
+                    "name": "titan_x_top",
+                    "file": "top/titan_x_top/titan_x_top.v",
+                    "category": "Full SoC Top",
+                    "description": "Complete Heterogeneous SoC Top-Level integrating 4x RV64GC application cores, 1x RV64IMAC security monitor, 15Mx9S AXI4 crossbar, 2MB shared coherent L2 cache, DDR4 memory controller, PCIe Gen2, Gigabit Ethernet, USB OTG, Video Pipeline, Root-of-Trust Secure Boot, and Industrial Peripherals."
+                }
+            ]
+        }
+    },
+    "module_dependency_tree": {
+        "titan_x_top": {
+            "parents": [],
+            "children": [
+                "rv_core_top",
+                "rv_monitor_core",
+                "axi_rom",
+                "l2_cache_top",
+                "ddr_ctrl_top",
+                "axi4_crossbar",
+                "axi4_to_ahb",
+                "ahb_to_apb",
+                "apb_bridge",
+                "gem_ethernet",
+                "pcie_top",
+                "usb_otg",
+                "secure_boot",
+                "envm_ctrl",
+                "drbg",
+                "aes_engine",
+                "rtc",
+                "uart_16550",
+                "can_controller",
+                "mipi_csi2_rx",
+                "isp_pipeline",
+                "hdmi_ctrl"
+            ]
+        },
+        "rv_core_top": {
+            "parents": ["titan_x_top"],
+            "children": [
+                "rv_fetch",
+                "rv_decode",
+                "rv_execute",
+                "rv_mem",
+                "rv_writeback",
+                "BUFX4"
+            ]
+        },
+        "rv_decode": {
+            "parents": ["rv_core_top"],
+            "children": [
+                "rv_regfile"
+            ]
+        },
+        "rv_execute": {
+            "parents": ["rv_core_top"],
+            "children": [
+                "rv_csr"
+            ]
+        },
+        "rv_mmu": {
+            "parents": ["rv_core_top"],
+            "children": [
+                "rv_tlb",
+                "rv_ptw"
+            ]
+        },
+        "rv_ptw": {
+            "parents": ["rv_mmu"],
+            "children": [
+                "rv_pmp"
+            ]
+        },
+        "rv_fetch": {
+            "parents": ["rv_core_top"],
+            "children": [
+                "rv_bpu",
+                "rv_icache"
+            ]
+        },
+        "l2_cache_top": {
+            "parents": ["titan_x_top"],
+            "children": [
+                "l2_tag_array",
+                "l2_data_array",
+                "l2_snoop_filter",
+                "l2_cache_ctrl",
+                "sram_512kx8_180nm"
+            ]
+        },
+        "ddr_ctrl_top": {
+            "parents": ["titan_x_top"],
+            "children": [
+                "ddr_scheduler",
+                "ddr_phy_if"
+            ]
+        }
+    },
+    "behavioral_truth_tables_and_pinouts": {
+        "rv_regfile": {
+            "ports": [
+                {"name": "clk", "dir": "input", "width": 1, "desc": "System clock"},
+                {"name": "rst_n", "dir": "input", "width": 1, "desc": "Active-low asynchronous reset"},
+                {"name": "rd_addr1", "dir": "input", "width": 5, "desc": "Source register 1 address (0-31)"},
+                {"name": "rd_data1", "dir": "output", "width": 64, "desc": "Source register 1 read data"},
+                {"name": "rd_addr2", "dir": "input", "width": 5, "desc": "Source register 2 address (0-31)"},
+                {"name": "rd_data2", "dir": "output", "width": 64, "desc": "Source register 2 read data"},
+                {"name": "wr_en", "dir": "input", "width": 1, "desc": "Synchronous write enable"},
+                {"name": "wr_addr", "dir": "input", "width": 5, "desc": "Destination register address (0-31)"},
+                {"name": "wr_data", "dir": "input", "width": 64, "desc": "64-bit data to write"}
+            ],
+            "behavioral_constraints": [
+                "Register x0 is architecturally hardwired to 64'h0. Any read of x0 returns 0.",
+                "Any write targeted to x0 (wr_addr == 0) is ignored; mem[0] remains 0.",
+                "Internal write-first bypass: If wr_en is active and wr_addr == rd_addrX (with wr_addr != 0), rd_dataX combinationally returns wr_data.",
+                "Simultaneous independent dual-port reads must be non-interfering across all registers.",
+                "Reset zeroes all 32 internal registers on falling edge of rst_n."
+            ],
+            "truth_table": [
+                {"rst_n": 0, "wr_en": "X", "wr_addr": "X", "rd_addr": "X", "rd_data": "64'h0", "comment": "Asynchronous reset clears all GPRs"},
+                {"rst_n": 1, "wr_en": 0, "wr_addr": "X", "rd_addr": "5'd0", "rd_data": "64'h0", "comment": "Read x0 always returns 0"},
+                {"rst_n": 1, "wr_en": 0, "wr_addr": "X", "rd_addr": "5'd1..31", "rd_data": "mem[rd_addr]", "comment": "Normal asynchronous read"},
+                {"rst_n": 1, "wr_en": 1, "wr_addr": "5'd0", "rd_addr": "5'd0", "rd_data": "64'h0", "comment": "Write to x0 suppressed; read remains 0"},
+                {"rst_n": 1, "wr_en": 1, "wr_addr": "5'd5", "rd_addr": "5'd5", "rd_data": "wr_data", "comment": "Write-first bypass: read matches incoming wr_data"},
+                {"rst_n": 1, "wr_en": 1, "wr_addr": "5'd5", "rd_addr": "5'd6", "rd_data": "mem[6]", "comment": "Unrelated read returns stored register value"}
+            ]
+        },
+        "rv_execute": {
+            "ports": [
+                {"name": "clk", "dir": "input", "width": 1, "desc": "Clock"},
+                {"name": "rst_n", "dir": "input", "width": 1, "desc": "Active-low reset"},
+                {"name": "stall", "dir": "input", "width": 1, "desc": "Global pipeline stall from core"},
+                {"name": "flush", "dir": "input", "width": 1, "desc": "Pipeline flush on branch redirect/trap"},
+                {"name": "pc_in", "dir": "input", "width": 64, "desc": "PC of instruction in EX stage"},
+                {"name": "rs1_data", "dir": "input", "width": 64, "desc": "Source operand 1 data"},
+                {"name": "rs2_data", "dir": "input", "width": 64, "desc": "Source operand 2 data"},
+                {"name": "imm", "dir": "input", "width": 64, "desc": "Decoded immediate value"},
+                {"name": "rd_in", "dir": "input", "width": 5, "desc": "Destination register address"},
+                {"name": "alu_op", "dir": "input", "width": 5, "desc": "ALU operation select code (0-20)"},
+                {"name": "funct3", "dir": "input", "width": 3, "desc": "Instruction funct3 field"},
+                {"name": "funct7", "dir": "input", "width": 7, "desc": "Instruction funct7 field"},
+                {"name": "opcode", "dir": "input", "width": 7, "desc": "Instruction opcode field"},
+                {"name": "branch", "dir": "input", "width": 1, "desc": "Branch instruction flag"},
+                {"name": "jal", "dir": "input", "width": 1, "desc": "JAL instruction flag"},
+                {"name": "jalr", "dir": "input", "width": 1, "desc": "JALR instruction flag"},
+                {"name": "alu_result", "dir": "output", "width": 64, "desc": "Computed ALU / multicycle result"},
+                {"name": "branch_taken", "dir": "output", "width": 1, "desc": "Branch condition evaluation outcome"},
+                {"name": "branch_target", "dir": "output", "width": 64, "desc": "Computed branch/jump target address"},
+                {"name": "mul_div_stall", "dir": "output", "width": 1, "desc": "Multicycle stall output to pipeline"}
+            ],
+            "behavioral_constraints": [
+                "64-bit integer arithmetic must follow two's complement overflow wrapping.",
+                "W-type instructions (OP_IMM_32 7'h1B, OP_32 7'h3B) narrow operands to [31:0] and sign-extend bit [31] across [63:32].",
+                "Division by zero returns all 1s (-1 for signed, 2^64-1 for unsigned) and REM returns dividend, complying with RISC-V spec.",
+                "Signed division overflow (-2^63 / -1) returns -2^63 and REM returns 0.",
+                "Branch target computation: JAL/Branch = pc_in + imm; JALR = (rs1 + imm) & ~64'h1."
+            ],
+            "truth_table": [
+                {"alu_op": "5'd0 (ALU_ADD)", "operation": "src1 + src2", "w_form": "SignExtend32(src1[31:0] + src2[31:0])"},
+                {"alu_op": "5'd1 (ALU_SUB)", "operation": "src1 - src2", "w_form": "SignExtend32(src1[31:0] - src2[31:0])"},
+                {"alu_op": "5'd2 (ALU_SLT)", "operation": "($signed(src1) < $signed(src2)) ? 1 : 0", "w_form": "N/A"},
+                {"alu_op": "5'd3 (ALU_SLTU)", "operation": "(src1 < src2) ? 1 : 0", "w_form": "N/A"},
+                {"alu_op": "5'd4 (ALU_XOR)", "operation": "src1 ^ src2", "w_form": "N/A"},
+                {"alu_op": "5'd5 (ALU_OR)", "operation": "src1 | src2", "w_form": "N/A"},
+                {"alu_op": "5'd6 (ALU_AND)", "operation": "src1 & src2", "w_form": "N/A"},
+                {"alu_op": "5'd7 (ALU_SLL)", "operation": "src1 << shamt[5:0]", "w_form": "SignExtend32(src1[31:0] << shamt[4:0])"},
+                {"alu_op": "5'd8 (ALU_SRL)", "operation": "src1 >> shamt[5:0]", "w_form": "SignExtend32(src1[31:0] >> shamt[4:0])"},
+                {"alu_op": "5'd9 (ALU_SRA)", "operation": "$signed(src1) >>> shamt[5:0]", "w_form": "SignExtend32($signed(src1[31:0]) >>> shamt[4:0])"},
+                {"alu_op": "5'd10 (ALU_LUI)", "operation": "src2 (imm)", "w_form": "N/A"},
+                {"alu_op": "5'd11 (ALU_AUIPC)", "operation": "pc_in + imm", "w_form": "N/A"},
+                {"alu_op": "5'd12 (ALU_MUL)", "operation": "(src1 * src2)[63:0]", "w_form": "SignExtend32((src1[31:0] * src2[31:0])[31:0])"},
+                {"alu_op": "5'd13 (ALU_MULH)", "operation": "($signed(src1) * $signed(src2))[127:64]", "w_form": "N/A"},
+                {"alu_op": "5'd14 (ALU_MULHSU)", "operation": "($signed(src1) * $unsigned(src2))[127:64]", "w_form": "N/A"},
+                {"alu_op": "5'd15 (ALU_MULHU)", "operation": "(src1 * src2)[127:64]", "w_form": "N/A"},
+                {"alu_op": "5'd16 (ALU_DIV)", "operation": "$signed(src1) / $signed(src2)", "w_form": "SignExtend32($signed(src1[31:0]) / $signed(src2[31:0]))"},
+                {"alu_op": "5'd17 (ALU_DIVU)", "operation": "src1 / src2", "w_form": "SignExtend32(src1[31:0] / src2[31:0])"},
+                {"alu_op": "5'd18 (ALU_REM)", "operation": "$signed(src1) % $signed(src2)", "w_form": "SignExtend32($signed(src1[31:0]) % $signed(src2[31:0]))"},
+                {"alu_op": "5'd19 (ALU_REMU)", "operation": "src1 % src2", "w_form": "SignExtend32(src1[31:0] % src2[31:0])"}
+            ],
+            "branch_truth_table": [
+                {"funct3": "3'b000 (BEQ)", "condition": "src1 == src2", "taken_when": "Operands identical"},
+                {"funct3": "3'b001 (BNE)", "condition": "src1 != src2", "taken_when": "Operands differ"},
+                {"funct3": "3'b100 (BLT)", "condition": "$signed(src1) < $signed(src2)", "taken_when": "Signed src1 less than src2"},
+                {"funct3": "3'b101 (BGE)", "condition": "$signed(src1) >= $signed(src2)", "taken_when": "Signed src1 greater or equal"},
+                {"funct3": "3'b110 (BLTU)", "condition": "src1 < src2", "taken_when": "Unsigned src1 less than src2"},
+                {"funct3": "3'b111 (BGEU)", "condition": "src1 >= src2", "taken_when": "Unsigned src1 greater or equal"}
+            ]
+        },
+        "rv_decode": {
+            "ports": [
+                {"name": "clk", "dir": "input", "width": 1, "desc": "Clock"},
+                {"name": "rst_n", "dir": "input", "width": 1, "desc": "Active-low reset"},
+                {"name": "stall", "dir": "input", "width": 1, "desc": "Stall pipeline"},
+                {"name": "flush", "dir": "input", "width": 1, "desc": "Flush pipeline"},
+                {"name": "pc_in", "dir": "input", "width": 64, "desc": "Incoming PC from Fetch"},
+                {"name": "instr_in", "dir": "input", "width": 32, "desc": "Incoming 32-bit instruction"},
+                {"name": "valid_in", "dir": "input", "width": 1, "desc": "Instruction valid flag"},
+                {"name": "wb_rd", "dir": "input", "width": 5, "desc": "Writeback destination register"},
+                {"name": "wb_data", "dir": "input", "width": 64, "desc": "Writeback register data"},
+                {"name": "wb_we", "dir": "input", "width": 1, "desc": "Writeback write enable"},
+                {"name": "pc_out", "dir": "output", "width": 64, "desc": "Registered PC to EX"},
+                {"name": "rs1_data", "dir": "output", "width": 64, "desc": "Register file read port 1 data"},
+                {"name": "rs2_data", "dir": "output", "width": 64, "desc": "Register file read port 2 data"},
+                {"name": "imm", "dir": "output", "width": 64, "desc": "Sign-extended immediate output"},
+                {"name": "rd", "dir": "output", "width": 5, "desc": "Destination register address"},
+                {"name": "alu_op", "dir": "output", "width": 5, "desc": "ALU operation selector"},
+                {"name": "mem_read", "dir": "output", "width": 1, "desc": "Asserted for Load instructions"},
+                {"name": "mem_write", "dir": "output", "width": 1, "desc": "Asserted for Store instructions"},
+                {"name": "reg_write", "dir": "output", "width": 1, "desc": "Asserted when instruction writes rd"},
+                {"name": "branch", "dir": "output", "width": 1, "desc": "Asserted for conditional branch"},
+                {"name": "jal", "dir": "output", "width": 1, "desc": "Asserted for JAL"},
+                {"name": "jalr", "dir": "output", "width": 1, "desc": "Asserted for JALR"},
+                {"name": "is_csr", "dir": "output", "width": 1, "desc": "Asserted for CSR access"},
+                {"name": "valid_out", "dir": "output", "width": 1, "desc": "Instruction valid to EX stage"}
+            ],
+            "instruction_format_truth_table": [
+                {"type": "R-Type", "opcode": "7'b0110011 (OP)", "imm_fmt": "None", "reg_write": 1, "mem_read": 0, "mem_write": 0},
+                {"type": "R-Type (32b)", "opcode": "7'b0111011 (OP_32)", "imm_fmt": "None", "reg_write": 1, "mem_read": 0, "mem_write": 0},
+                {"type": "I-Type (ALU)", "opcode": "7'b0010011 (OP_IMM)", "imm_fmt": "SignExtend(instr[31:20])", "reg_write": 1, "mem_read": 0, "mem_write": 0},
+                {"type": "I-Type (32b)", "opcode": "7'b0011011 (OP_IMM_32)", "imm_fmt": "SignExtend(instr[31:20])", "reg_write": 1, "mem_read": 0, "mem_write": 0},
+                {"type": "I-Type (Load)", "opcode": "7'b0000011 (LOAD)", "imm_fmt": "SignExtend(instr[31:20])", "reg_write": 1, "mem_read": 1, "mem_write": 0},
+                {"type": "I-Type (JALR)", "opcode": "7'b1100111 (JALR)", "imm_fmt": "SignExtend(instr[31:20])", "reg_write": 1, "mem_read": 0, "mem_write": 0},
+                {"type": "S-Type (Store)", "opcode": "7'b0100011 (STORE)", "imm_fmt": "SignExtend({instr[31:25], instr[11:7]})", "reg_write": 0, "mem_read": 0, "mem_write": 1},
+                {"type": "B-Type (Branch)", "opcode": "7'b1100011 (BRANCH)", "imm_fmt": "SignExtend({instr[31], instr[7], instr[30:25], instr[11:8], 1'b0})", "reg_write": 0, "mem_read": 0, "mem_write": 0},
+                {"type": "U-Type (LUI)", "opcode": "7'b0110111 (LUI)", "imm_fmt": "SignExtend({instr[31:12], 12'b0})", "reg_write": 1, "mem_read": 0, "mem_write": 0},
+                {"type": "U-Type (AUIPC)", "opcode": "7'b0010111 (AUIPC)", "imm_fmt": "SignExtend({instr[31:12], 12'b0})", "reg_write": 1, "mem_read": 0, "mem_write": 0},
+                {"type": "J-Type (JAL)", "opcode": "7'b1101111 (JAL)", "imm_fmt": "SignExtend({instr[31], instr[19:12], instr[20], instr[30:21], 1'b0})", "reg_write": 1, "mem_read": 0, "mem_write": 0},
+                {"type": "SYSTEM", "opcode": "7'b1110011 (SYSTEM)", "imm_fmt": "ZeroExtend(instr[19:15]) for uimm", "reg_write": "is_csr", "mem_read": 0, "mem_write": 0}
+            ]
+        },
+        "rv_core_top": {
+            "ports": [
+                {"name": "clk", "dir": "input", "width": 1, "desc": "Core processor clock (100-200 MHz)"},
+                {"name": "rst_n", "dir": "input", "width": 1, "desc": "Active-low system reset"},
+                {"name": "irq_m_ext", "dir": "input", "width": 1, "desc": "PLIC external interrupt"},
+                {"name": "irq_m_timer", "dir": "input", "width": 1, "desc": "CLINT timer interrupt"},
+                {"name": "irq_m_soft", "dir": "input", "width": 1, "desc": "CLINT software interrupt"},
+                {"name": "imem_arvalid", "dir": "output", "width": 1, "desc": "Instruction bus read address valid"},
+                {"name": "imem_arready", "dir": "input", "width": 1, "desc": "Instruction bus read address ready"},
+                {"name": "imem_araddr", "dir": "output", "width": 40, "desc": "Instruction fetch physical address"},
+                {"name": "imem_rvalid", "dir": "input", "width": 1, "desc": "Instruction bus read data valid"},
+                {"name": "imem_rready", "dir": "output", "width": 1, "desc": "Instruction bus read data ready"},
+                {"name": "imem_rdata", "dir": "input", "width": 64, "desc": "Instruction read data payload"},
+                {"name": "dmem_awvalid", "dir": "output", "width": 1, "desc": "Data bus write address valid"},
+                {"name": "dmem_awaddr", "dir": "output", "width": 40, "desc": "Data bus write address"},
+                {"name": "dmem_wvalid", "dir": "output", "width": 1, "desc": "Data bus write data valid"},
+                {"name": "dmem_wdata", "dir": "output", "width": 64, "desc": "Data bus write data payload"},
+                {"name": "dmem_wstrb", "dir": "output", "width": 8, "desc": "Data bus write byte strobes"},
+                {"name": "dmem_arvalid", "dir": "output", "width": 1, "desc": "Data bus read address valid"},
+                {"name": "dmem_araddr", "dir": "output", "width": 40, "desc": "Data bus read address"},
+                {"name": "dmem_rvalid", "dir": "input", "width": 1, "desc": "Data bus read data valid"},
+                {"name": "dmem_rdata", "dir": "input", "width": 64, "desc": "Data bus read data payload"},
+                {"name": "halt_req", "dir": "input", "width": 1, "desc": "Debug halt request"},
+                {"name": "hart_halted", "dir": "output", "width": 1, "desc": "Core halted status indicator"},
+                {"name": "hart_running", "dir": "output", "width": 1, "desc": "Core active running status"}
+            ],
+            "hazard_and_forwarding_truth_table": [
+                {"condition": "EX.rs1 == MEM.rd && MEM.reg_write && MEM.rd != 0", "action": "Forward MEM result to EX src1", "hazard": "RAW EX-MEM forward"},
+                {"condition": "EX.rs2 == MEM.rd && MEM.reg_write && MEM.rd != 0", "action": "Forward MEM result to EX src2", "hazard": "RAW EX-MEM forward"},
+                {"condition": "EX.rs1 == WB.rd && WB.reg_write && WB.rd != 0", "action": "Forward WB result to EX src1", "hazard": "RAW EX-WB forward"},
+                {"condition": "EX.rs2 == WB.rd && WB.reg_write && WB.rd != 0", "action": "Forward WB result to EX src2", "hazard": "RAW EX-WB forward"},
+                {"condition": "DE.mem_read && ((DE.rd == FE.rs1) || (DE.rd == FE.rs2))", "action": "Assert pipeline stall for 1 cycle", "hazard": "Load-Use Hazard"},
+                {"condition": "EX.branch_taken", "action": "Assert flush_de, redirect PC to branch_target", "hazard": "Control Hazard (Branch Taken)"}
+            ]
+        }
+    },
+    "self_healing_ralph_loop": {
+        "execution_steps": [
+            "1. Context Isolation: Select target module from active architectural wave.",
+            "2. Fresh TB Synthesis: Synthesize 100% brand-new, self-checking Verilog testbench from truth tables and pinouts with zero bias or reuse of legacy testbenches.",
+            "3. Compiler Invocation: Execute 'iverilog -g2012 -Iincludes -o sim_<module>.vvp <sources>' followed by 'vvp sim_<module>.vvp'.",
+            "4. Log Diagnosis: Interrogate simulation transcript for compiler syntax errors, undeclared nets, timing violations, or assertion check failures.",
+            "5. Self-Healing Patch: Apply surgical RTL corrections if hardware design defects are identified, or refine test fixture stimuli if timing boundary violated.",
+            "6. Progress Persistence: Append timestamped step outcome to progress.txt.",
+            "7. Convergence Guarantee: Loop iteration until all self-checking assertions pass with zero failures."
+        ]
+    },
+    "gui_waveform_automation": {
+        "tool": "GTKWave (/usr/bin/gtkwave)",
+        "screen_capture_tool": "/usr/bin/scrot",
+        "output_directory": "verification_waves",
+        "automation_protocol": [
+            "1. Generate authentic VCD dumpfile with $dumpfile and $dumpvars during vvp simulation.",
+            "2. Create dedicated GTKWave Tcl automation script specifying signal traces, radix, zoom to fit, and signal grouping.",
+            "3. Launch GTKWave GUI on DISPLAY=:0 using 'gtkwave -S <script>.tcl <vcd_file>'.",
+            "4. Capture authentic, un-fabricated window screenshots via 'scrot verification_waves/<module>_gtkwave.png'.",
+            "5. Validate screenshot dimensions and byte integrity."
+        ]
+    },
+    "coderabbit_pr_submission": {
+        "git_branch_pattern": "verify/wave-<wave_num>-<subsystem>",
+        "commit_message_pattern": "verify(wave<wave_num>): 100% pass for <module_list> with authentic GTKWave verification",
+        "audit_checks": [
+            "Zero race conditions and zero latches inferred in combinational logic",
+            "Full reset initialization on all internal registers",
+            "Clean Clock Domain Crossing (CDC) synchronizers across asynchronous domains",
+            "Valid AXI4 / APB bus handshake compliance"
+        ]
+    }
+}
+
+target_path = "prd.json"
+with open(target_path, "w") as f:
+    json.dump(prd_data, f, indent=2)
+
+print(f"Successfully generated {target_path} ({os.path.getsize(target_path)} bytes)")

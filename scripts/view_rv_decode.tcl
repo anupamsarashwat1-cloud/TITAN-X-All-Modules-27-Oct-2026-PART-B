@@ -1,0 +1,26 @@
+set nfacs [gtkwave::getNumFacs]
+set facs [list]
+lappend facs "tb_fresh_rv_decode.clk"
+lappend facs "tb_fresh_rv_decode.rst_n"
+lappend facs "tb_fresh_rv_decode.stall"
+lappend facs "tb_fresh_rv_decode.flush"
+lappend facs "tb_fresh_rv_decode.pc_in\[63:0\]"
+lappend facs "tb_fresh_rv_decode.instr_in\[31:0\]"
+lappend facs "tb_fresh_rv_decode.valid_in"
+lappend facs "tb_fresh_rv_decode.opcode\[6:0\]"
+lappend facs "tb_fresh_rv_decode.alu_op\[4:0\]"
+lappend facs "tb_fresh_rv_decode.rd\[4:0\]"
+lappend facs "tb_fresh_rv_decode.rs1_addr\[4:0\]"
+lappend facs "tb_fresh_rv_decode.rs2_addr\[4:0\]"
+lappend facs "tb_fresh_rv_decode.imm\[63:0\]"
+lappend facs "tb_fresh_rv_decode.rs1_data\[63:0\]"
+lappend facs "tb_fresh_rv_decode.rs2_data\[63:0\]"
+lappend facs "tb_fresh_rv_decode.reg_write"
+lappend facs "tb_fresh_rv_decode.mem_read"
+lappend facs "tb_fresh_rv_decode.mem_write"
+lappend facs "tb_fresh_rv_decode.branch"
+lappend facs "tb_fresh_rv_decode.jal"
+lappend facs "tb_fresh_rv_decode.is_csr"
+lappend facs "tb_fresh_rv_decode.valid_out"
+gtkwave::addSignalsFromList $facs
+gtkwave::setZoomFactor -3
