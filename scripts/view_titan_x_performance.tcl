@@ -1,0 +1,28 @@
+set nfacs [gtkwave::getNumFacs]
+set facs [list]
+lappend facs "tb_titan_x_performance.clk"
+lappend facs "tb_titan_x_performance.rst_n"
+lappend facs "tb_titan_x_performance.dut.boot_pass"
+lappend facs "tb_titan_x_performance.dut.core_rst_n"
+lappend facs "tb_titan_x_performance.dut.gen_cores\[0\].u_core.wb_we"
+lappend facs "tb_titan_x_performance.dut.gen_cores\[0\].u_core.wb_rd\[4:0\]"
+lappend facs "tb_titan_x_performance.dut.gen_cores\[0\].u_core.wb_data\[63:0\]"
+lappend facs "tb_titan_x_performance.dut.gen_cores\[1\].u_core.wb_we"
+lappend facs "tb_titan_x_performance.dut.gen_cores\[1\].u_core.wb_rd\[4:0\]"
+lappend facs "tb_titan_x_performance.dut.gen_cores\[1\].u_core.wb_data\[63:0\]"
+lappend facs "tb_titan_x_performance.dut.gen_cores\[2\].u_core.wb_we"
+lappend facs "tb_titan_x_performance.dut.gen_cores\[2\].u_core.wb_rd\[4:0\]"
+lappend facs "tb_titan_x_performance.dut.gen_cores\[2\].u_core.wb_data\[63:0\]"
+lappend facs "tb_titan_x_performance.dut.gen_cores\[3\].u_core.wb_we"
+lappend facs "tb_titan_x_performance.dut.gen_cores\[3\].u_core.wb_rd\[4:0\]"
+lappend facs "tb_titan_x_performance.dut.gen_cores\[3\].u_core.wb_data\[63:0\]"
+lappend facs "tb_titan_x_performance.dut.u_monitor.mon_wb_we"
+lappend facs "tb_titan_x_performance.dut.u_monitor.mon_wb_rd\[4:0\]"
+lappend facs "tb_titan_x_performance.dut.u_monitor.mon_wb_data\[63:0\]"
+lappend facs "tb_titan_x_performance.dut.u_ddr_ctrl.s_awvalid"
+lappend facs "tb_titan_x_performance.dut.u_ddr_ctrl.s_awaddr\[39:0\]"
+lappend facs "tb_titan_x_performance.dut.u_ddr_ctrl.s_wvalid"
+lappend facs "tb_titan_x_performance.dut.u_ddr_ctrl.s_wdata\[63:0\]"
+lappend facs "tb_titan_x_performance.dut.u_uart0.txd"
+gtkwave::addSignalsFromList $facs
+gtkwave::setZoomFactor -15

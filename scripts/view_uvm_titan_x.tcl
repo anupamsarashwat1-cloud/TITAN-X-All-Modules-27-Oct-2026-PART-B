@@ -1,0 +1,25 @@
+set nfacs [gtkwave::getNumFacs]
+set facs [list]
+lappend facs "tb_uvm_top.clk"
+lappend facs "tb_uvm_top.rst_n"
+lappend facs "tb_uvm_top.u_xbar.m_awvalid\[0\]"
+lappend facs "tb_uvm_top.u_xbar.m_awready\[0\]"
+lappend facs "tb_uvm_top.u_xbar.m_awaddr\[39:0\]"
+lappend facs "tb_uvm_top.u_xbar.m_wvalid\[0\]"
+lappend facs "tb_uvm_top.u_xbar.m_wready\[0\]"
+lappend facs "tb_uvm_top.u_xbar.m_wdata\[63:0\]"
+lappend facs "tb_uvm_top.u_xbar.m_bvalid\[0\]"
+lappend facs "tb_uvm_top.u_xbar.m_bready\[0\]"
+lappend facs "tb_uvm_top.u_xbar.m_arvalid\[0\]"
+lappend facs "tb_uvm_top.u_xbar.m_arready\[0\]"
+lappend facs "tb_uvm_top.u_xbar.m_araddr\[39:0\]"
+lappend facs "tb_uvm_top.u_xbar.m_rvalid\[0\]"
+lappend facs "tb_uvm_top.u_xbar.m_rready\[0\]"
+lappend facs "tb_uvm_top.u_xbar.m_rdata\[63:0\]"
+lappend facs "tb_uvm_top.u_xbar.s_awvalid\[0\]"
+lappend facs "tb_uvm_top.u_xbar.s_wvalid\[0\]"
+lappend facs "tb_uvm_top.u_xbar.s_bvalid\[0\]"
+lappend facs "tb_uvm_top.u_xbar.s_arvalid\[0\]"
+lappend facs "tb_uvm_top.u_xbar.s_rvalid\[0\]"
+gtkwave::addSignalsFromList $facs
+gtkwave::setZoomFactor -15
