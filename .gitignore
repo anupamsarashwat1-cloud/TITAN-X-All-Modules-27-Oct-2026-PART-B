@@ -14,3 +14,4 @@ __pycache__/
 *.swo
 *~
 .DS_Store
+verification/coverage/obj_dir/
