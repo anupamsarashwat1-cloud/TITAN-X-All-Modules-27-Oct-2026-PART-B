@@ -44,8 +44,16 @@ module l2_snoop_filter #(
     // Here we model a 64-set × 8-way directory per core (or unified).
     // Unified array: 64 sets × 32 ways (8 ways * 4 cores)
     // -------------------------------------------------------
+`ifdef FORMAL
+    localparam DIR_SETS = 2;
+    localparam DIR_WAYS = 2;
+    wire [0:0] index = req_addr[6];
+`else
     localparam DIR_SETS = 64;
     localparam DIR_WAYS = 32;
+    wire [INDEX_W-1:0] index = req_addr[11:6];
+`endif
+    wire [TAG_W-1:0]   tag   = req_addr[39:12];
 
     // State encoding (MESI)
     localparam ST_I = 2'b00; // Invalid
@@ -57,10 +65,6 @@ module l2_snoop_filter #(
     reg [1:0]  dir_state [0:DIR_SETS-1][0:DIR_WAYS-1];
     reg [3:0]  dir_mask  [0:DIR_SETS-1][0:DIR_WAYS-1];
     reg [27:0] dir_tag   [0:DIR_SETS-1][0:DIR_WAYS-1];
-
-    // Address decode
-    wire [INDEX_W-1:0] index = req_addr[11:6];
-    wire [TAG_W-1:0]   tag   = req_addr[39:12];
 
     // -------------------------------------------------------
     // FSM
