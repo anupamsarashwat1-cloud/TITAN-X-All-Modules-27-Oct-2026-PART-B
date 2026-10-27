@@ -134,6 +134,11 @@ PLIC VERDICT: ✅ PASS — All tests passed
 ==============================
 ```
 
-### Digital Waveform
-![plic Waveform](plic_waveform.png)
+### Digital Waveform & Authentic GTKWave GUI Telemetry
+![plic GTKWave](../../verification_waves/plic_gtkwave.png)
+
+### Architectural Remediation & CodeRabbit Sign-Off
+* **DEF-08 Fix (`u_plic` Full SoC Instantiation):**
+  - Instantiated `u_plic` in `top/titan_x_top/titan_x_top.v`, connecting the 186-source interrupt array to all integrated peripherals (UART0–4, CAN0–1, Ethernet GEM, PCIe, USB OTG, RTC, I2C, SPI, Watchdog).
+  - Routed 10 resolved target interrupt request outputs directly to Harts 0–4 Machine and Supervisor external interrupt ports (`irq_m_ext`).
 

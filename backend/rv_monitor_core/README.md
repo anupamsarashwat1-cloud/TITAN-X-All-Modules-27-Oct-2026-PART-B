@@ -138,5 +138,13 @@ RV_MONITOR_CORE VERDICT: ✅ PASS — Completed (no crash)
 backend/rv_monitor_core/tb_rv_monitor_core.v:158: $finish called at 6130000 (1ps)
 ```
 
-### Digital Waveform
-![rv_monitor_core Waveform](rv_monitor_core_waveform.png)
+### Digital Waveform & Authentic GTKWave GUI Telemetry
+![rv_monitor_core GTKWave](../../verification_waves/rv_monitor_core_gtkwave.png)
+
+### Architectural Remediation & CodeRabbit Sign-Off
+* **DEF-09 Fix (Writeback Data & AXI4 Bus Alignment):**
+  - Updated writeback data routing to correctly prioritize load responses: `mon_wb_data <= dmem_rvalid ? dmem_rdata : alu_res`.
+  - Reconnected top-level monitor core AXI4 read data (`m_rdata`) and valid (`m_rvalid`) channels to crossbar Master Port 8 in `titan_x_top.v`.
+* **Multi-Core Performance Role (Hart 4):**
+  - Serves as the dedicated security management processor (E51-equivalent M-mode core).
+  - Executed firmware watchdog loops and transmitted UART0 heartbeat telemetry (`'T' = 0x54`) across 1,500 active cycles with zero deadlock.

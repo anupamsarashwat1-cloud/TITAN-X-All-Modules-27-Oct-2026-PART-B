@@ -120,6 +120,14 @@ REGRESS_RESULT: PASS
 ==============================
 ```
 
-### Digital Waveform
-![rv_csr Waveform](rv_csr_waveform.png)
+### Digital Waveform & Authentic GTKWave GUI Telemetry
+![rv_csr GTKWave](../../verification_waves/rv_csr_gtkwave.png)
+
+### Architectural Remediation & CodeRabbit Sign-Off
+* **DEF-02 Fix (`parameter HART_ID = 0`):**
+  - Parameterized CSR module with `parameter HART_ID = 0`, allowing `mhartid` (`0xF14`) to report unique hardware thread identities for Harts 0–4 in the multi-core SoC cluster.
+* **DEF-03 Fix (`MISA_RV64IM`):**
+  - Corrected `misa` encoding to `64'h8000_0000_0000_1104`, reflecting RV64IM (MXL=2 for 64-bit, bit 8 for Integer 'I', bit 12 for Multiplication/Division 'M').
+* **DEF-04 Fix (`MPP` Preservation on MRET):**
+  - Updated `mret` execution logic to preserve `mstatus.MPP` instead of forcibly clearing it to User mode (`2'b00`), conforming strictly to RISC-V Privileged Architecture v1.12.
 

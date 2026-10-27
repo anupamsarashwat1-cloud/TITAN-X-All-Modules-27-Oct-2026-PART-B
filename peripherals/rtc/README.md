@@ -2,7 +2,7 @@
 
 ## Description
 
-The `rtc` module is a Real-Time Counter designed for the SMVDU-TITAN-X SoC. It serves as the primary timebase for the RISC-V core local timer interrupts, implementing a 64-bit free-running counter (analogous to the RISC-V `mtime` register). The architecture supports up to 5 distinct harts (4 application cores and 1 monitor core) by providing dedicated 64-bit memory-mapped comparators (`mtimecmp`) for each. A key design feature is the use of a 2-stage flip-flop synchronizer to safely transfer the 64-bit counter value from the slow, always-on RTC clock domain to the faster system clock domain. When the synchronized counter value meets or exceeds a core's comparator value, the corresponding timer interrupt is asserted.
+The `rtc` module is a Real-Time Counter designed for the SMVDU-TITAN-X SoC. It serves as the primary timebase for the RISC-V core local timer interrupts, implementing a 64-bit free-running counter (analogous to the RISC-V `mtime` register). The architecture supports up to 5 distinct harts (4 application cores and 1 monitor core) by providing dedicated 64-bit memory-mapped comparators (`mtimecmp`) for each. Following Phase 7 self-healing (DEF-01), the clock domain crossing utilizes a robust 1-bit toggle pulse synchronizer (`rtc_tick_toggle` to a 3-FF edge detector) to safely signal slow tick events from the always-on RTC clock domain (`rtc_clk`, 32.768 kHz) into the fast system clock domain (`clk`, 100-200 MHz). The 64-bit `mtime` counter increments purely within the system clock domain, eliminating multi-bit bus skew and metastability hazards. When the counter value meets or exceeds a core's comparator value, the corresponding timer interrupt is asserted.
 
 ## Interface
 
@@ -30,7 +30,7 @@ The `rtc` module is a Real-Time Counter designed for the SMVDU-TITAN-X SoC. It s
 
 ## Functionality
 
-The `rtc` peripheral increments a 64-bit internal counter (`mtime`) on every positive edge of the `rtc_clk`. To prevent metastability when accessed by the rest of the SoC, this 64-bit value is synchronized into the `clk` domain using a 2-stage flip-flop chain (`mtime_meta`, `mtime_sync`). The module acts as an APB slave, allowing the host to read the current synchronized time and to configure the 64-bit `mtimecmp` registers for each of the five connected cores. The APB address mapping follows a standard CLINT-like structure, splitting 64-bit reads and writes into 32-bit halves. Continuous combinational logic checks if `mtime_sync` is greater than or equal to `mtimecmp[i]`; if so, it drives `timer_irq[i]` high, triggering a timer interrupt in the respective core.
+The `rtc` peripheral generates a 1-bit toggle signal (`rtc_tick_toggle`) on every positive edge of the `rtc_clk`. In the system clock domain (`clk`), this signal is passed through a 3-stage synchronizer (`rtc_sync_q`), and an edge detector increments the 64-bit `mtime` counter synchronously. The module acts as an APB slave, allowing the host to read the current time and configure the 64-bit `mtimecmp` registers for each of the five cores. The APB address mapping follows a standard CLINT-like structure, splitting 64-bit reads and writes into 32-bit halves. Continuous combinational logic checks if `mtime` is greater than or equal to `mtimecmp[i]`; if so, it drives `timer_irq[i]` high, triggering a timer interrupt in the respective core.
 
 ## Hierarchical Block Diagram
 
